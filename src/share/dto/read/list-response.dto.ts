@@ -1,4 +1,4 @@
-export class ListResponseDto<T> {
+export interface ListResponseDto<T> {
   total: number;
   data: T[];
 }

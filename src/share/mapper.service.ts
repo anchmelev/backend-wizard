@@ -1,28 +1,50 @@
 import { Injectable } from '@nestjs/common';
-import { QuestionnaireDto } from 'src/questionnaires/dto/read/questionnaire.dto';
-import type { Questionnaire } from 'src/questionnaires/entities/questionnaire.entity';
-import { QuestionnaireStep } from 'src/questionnaires/entities/steps/questionnaire-step.entity';
-import { QuestionnaireStepDto } from 'src/questionnaires/dto/read/steps/questionnaire-step.dto';
-import { InputField } from 'src/questionnaires/entities/fields/input-field.entity';
-import { MultiChoiceField } from 'src/questionnaires/entities/fields/multi-choice-field.entity';
-import { NumericField } from 'src/questionnaires/entities/fields/numeric-field.entity';
-import { SingleChoiceField } from 'src/questionnaires/entities/fields/single-choice-field.entity';
+import { SurveyConfigDto } from 'src/survey-config/dto/read/survey-config.dto';
+import { SurveyStepConfigDto } from 'src/survey-config/dto/read/survey-step-config.dto';
+import { FieldType } from 'src/survey-config/entities/fields/field.type';
+import { InputField } from 'src/survey-config/entities/fields/input-field.entity';
+import { MultiChoiceField } from 'src/survey-config/entities/fields/multi-choice-field.entity';
+import { NumericField } from 'src/survey-config/entities/fields/numeric-field.entity';
+import { SingleChoiceField } from 'src/survey-config/entities/fields/single-choice-field.entity';
+import { SurveyConfig } from 'src/survey-config/entities/survey-config.entity';
+import { SurveyStepConfig } from 'src/survey-config/entities/survey-step-config.entity';
 import { MappingError } from './mapping.error';
-import { FieldType } from 'src/questionnaires/entities/fields/field.type';
+import { SurveyAnswer } from 'src/survey-answer/entities/survey-answer.entity';
+import { SurveyAnswerDto } from 'src/survey-answer/dto/read/survey-answer.dto';
+import { SurveyStepAnswerDto } from 'src/survey-answer/dto/read/survey-step-answer.dto';
+import { SurveyStepAnswer } from 'src/survey-answer/entities/survey-step-answer.entity';
 
 @Injectable()
 export class MapperService {
-  toQuestionnaireDto = (questionnaire: Questionnaire): QuestionnaireDto => {
-    const questionnaireDto: QuestionnaireDto = {
-      id: questionnaire.id,
-      title: questionnaire.title,
-      steps: questionnaire.steps.map((x) => x.id),
+  toSurveyConfigDto = (survey: SurveyConfig): SurveyConfigDto => {
+    const surveyDto: SurveyConfigDto = {
+      id: survey.id,
+      title: survey.title,
+      stepConfigs: survey.stepConfigs.map(this.toSurveyStepConfigDto),
     };
 
-    return questionnaireDto;
+    return surveyDto;
   };
 
-  toQuestionnaireStepDto = ({ id, text, field }: QuestionnaireStep): QuestionnaireStepDto => {
+  toSurveyAnswerDto = (survey: SurveyAnswer): SurveyAnswerDto => {
+    const surveyDto: SurveyAnswerDto = {
+      id: survey.id,
+      surveyConfig: { id: survey.surveyConfig.id, title: survey.surveyConfig.title },
+      stepAnswers: survey.stepAnswers.map(this.toSurveyStepAnswerDto),
+    };
+
+    return surveyDto;
+  };
+
+  toSurveyStepAnswerDto = ({ id, stepConfig, fieldValue }: SurveyStepAnswer): SurveyStepAnswerDto => {
+    return {
+      id,
+      stepConfig: { id: stepConfig.id, text: stepConfig.text },
+      fieldValue,
+    };
+  };
+
+  toSurveyStepConfigDto = ({ id, text, field }: SurveyStepConfig): SurveyStepConfigDto => {
     let fieldType: FieldType;
     let options: string[] | undefined;
     if (field instanceof InputField) {
@@ -36,7 +58,7 @@ export class MapperService {
       fieldType = FieldType.singleChoice;
       options = field.options;
     } else {
-      throw new MappingError('Неизвестный тип поля, необходимо поддержать его мапинг', field);
+      throw new MappingError('Unknown field type, must be supported to display it', field);
     }
 
     return {

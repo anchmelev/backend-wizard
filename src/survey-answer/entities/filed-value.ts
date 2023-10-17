@@ -1,0 +1,1 @@
+export type FiledValue = string | string[] | number;
